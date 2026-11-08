@@ -69,6 +69,7 @@ class DeleteResult:
     status: DeleteStatus
     message: str
     url: str | None = None
+    trace_dir: str | None = None
 
     @property
     def deleted(self) -> bool:
