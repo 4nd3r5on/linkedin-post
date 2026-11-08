@@ -1,7 +1,11 @@
+# Copyright (c) 2026 Dmitry Andersson
+# SPDX-License-Identifier: MIT
 """PostComposer: drive LinkedIn's share dialog in the browser page upstream owns."""
 
+import contextlib
 import logging
 import re
+from typing import override
 
 from patchright.async_api import Locator, Page
 from patchright.async_api import TimeoutError as PlaywrightTimeoutError
@@ -9,6 +13,7 @@ from patchright.async_api import TimeoutError as PlaywrightTimeoutError
 from linkedin_post.adapters.secondary.trace import capture_failure
 from linkedin_post.common.linkedin import SHARE_URL, absolute_url
 from linkedin_post.domain.entities import PostText, PublishResult, PublishStatus
+from linkedin_post.domain.ports.secondary.linkedin import PostComposer
 
 logger = logging.getLogger(__name__)
 
@@ -46,10 +51,8 @@ async def _visibility(dialog: Locator) -> str | None:
 async def _discard(page: Page, dialog: Locator) -> None:
     await page.keyboard.press("Escape")
     discard = page.get_by_role("button", name="Discard", exact=True)
-    try:
+    with contextlib.suppress(PlaywrightTimeoutError):
         await discard.click(timeout=5000)
-    except PlaywrightTimeoutError:
-        pass
     try:
         await dialog.wait_for(state="hidden", timeout=5000)
     except PlaywrightTimeoutError:
@@ -70,21 +73,27 @@ async def _open_share_dialog(page: Page, editor: Locator) -> bool:
     await page.goto(SHARE_URL, wait_until="domcontentloaded")
     try:
         await editor.wait_for(state="visible", timeout=8000)
-        return True
     except PlaywrightTimeoutError:
         logger.info("shareActive did not open the dialog; clicking Start a post")
-    start = page.get_by_role("button", name=re.compile(r"^Start a post", re.I)).or_(
-        page.get_by_text("Start a post", exact=True)
-    ).first
+    else:
+        return True
+    start = (
+        page.get_by_role("button", name=re.compile(r"^Start a post", re.IGNORECASE))
+        .or_(page.get_by_text("Start a post", exact=True))
+        .first
+    )
     try:
         await start.click(timeout=15000)
         await editor.wait_for(state="visible", timeout=15000)
-        return True
     except PlaywrightTimeoutError:
         return False
+    return True
 
 
-class LinkedInComposer:
+class LinkedInComposer(PostComposer):
+    """Publishes through the share dialog of the page upstream signed in."""
+
+    @override
     async def publish(self, page: Page, text: PostText, *, confirm: bool) -> PublishResult:
         # get_by_role also matches a native <dialog>, which [role="dialog"] misses.
         dialog = page.get_by_role("dialog").filter(has=page.locator(EDITOR)).first
@@ -100,7 +109,9 @@ class LinkedInComposer:
         visibility = await _visibility(dialog)
         inserted = await editor.evaluate(_INSERT_JS, text.value)
         if inserted != "written":
-            trace_dir = await capture_failure(page, "create-post-insert-failed", {"insert": inserted})
+            trace_dir = await capture_failure(
+                page, "create-post-insert-failed", {"insert": inserted}
+            )
             await _discard(page, dialog)
             return PublishResult(
                 PublishStatus.INSERT_FAILED,

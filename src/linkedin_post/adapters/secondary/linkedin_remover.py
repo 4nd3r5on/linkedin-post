@@ -1,20 +1,27 @@
+# Copyright (c) 2026 Dmitry Andersson
+# SPDX-License-Identifier: MIT
 """PostRemover: delete one of the signed-in user's posts through its "..." menu."""
 
 import re
+from typing import override
 
-from patchright.async_api import Page
+from patchright.async_api import Locator, Page
 from patchright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from linkedin_post.adapters.secondary.trace import capture_failure
 from linkedin_post.domain.entities import DeleteResult, DeleteStatus, PostRef
+from linkedin_post.domain.ports.secondary.linkedin import PostRemover
 
-_MENU_NAME = re.compile(r"^Open control menu for post", re.I)
-_DELETE_NAME = re.compile(r"^Delete", re.I)
+_MENU_NAME = re.compile(r"^Open control menu for post", re.IGNORECASE)
+_DELETE_NAME = re.compile(r"^Delete", re.IGNORECASE)
 # LinkedIn's confirmation button: "Delete", sometimes "Delete post".
-_CONFIRM_NAME = re.compile(r"^\s*Delete(\s+post)?\s*$", re.I)
+_CONFIRM_NAME = re.compile(r"^\s*Delete(\s+post)?\s*$", re.IGNORECASE)
 
 
-class LinkedInRemover:
+class LinkedInRemover(PostRemover):
+    """Deletes through the post's "..." menu and LinkedIn's confirmation."""
+
+    @override
     async def delete(self, page: Page, post: PostRef, *, confirm: bool) -> DeleteResult:
         url = post.url
         await page.goto(url, wait_until="domcontentloaded")
@@ -31,9 +38,11 @@ class LinkedInRemover:
             )
 
         await menu_button.click()
-        delete_item = page.get_by_role("menuitem", name=_DELETE_NAME).or_(
-            page.get_by_role("button", name=re.compile(r"^Delete post", re.I))
-        ).first
+        delete_item = (
+            page.get_by_role("menuitem", name=_DELETE_NAME)
+            .or_(page.get_by_role("button", name=re.compile(r"^Delete post", re.IGNORECASE)))
+            .first
+        )
         try:
             await delete_item.wait_for(state="visible", timeout=5000)
         except PlaywrightTimeoutError:
@@ -65,7 +74,9 @@ class LinkedInRemover:
         try:
             await confirm_button.wait_for(state="visible", timeout=10000)
         except PlaywrightTimeoutError:
-            trace_dir = await capture_failure(page, "delete-post-confirm-not-found", button_name=_DELETE_NAME)
+            trace_dir = await capture_failure(
+                page, "delete-post-confirm-not-found", button_name=_DELETE_NAME
+            )
             await page.keyboard.press("Escape")
             return DeleteResult(
                 DeleteStatus.CONFIRM_NOT_FOUND,
@@ -85,22 +96,25 @@ class LinkedInRemover:
         )
 
     @staticmethod
-    async def _gone(page: Page, url: str, confirm_dialog, menu_button) -> bool:
-        """True once the post's menu is gone, checked again on a fresh load."""
+    async def _gone(page: Page, url: str, confirm_dialog: Locator, menu_button: Locator) -> bool:
+        """Wait for the post's menu to go, and check again on a fresh load."""
         try:
             await confirm_dialog.wait_for(state="hidden", timeout=15000)
         except PlaywrightTimeoutError:
             return False
         try:
             await menu_button.wait_for(state="detached", timeout=10000)
-            return True
         except PlaywrightTimeoutError:
             pass
+        else:
+            return True
         # The page may show other posts whose menus match too: reload the
         # post itself and see whether its menu still comes up.
         await page.goto(url, wait_until="domcontentloaded")
         try:
-            await page.get_by_role("button", name=_MENU_NAME).first.wait_for(state="visible", timeout=15000)
+            await page.get_by_role("button", name=_MENU_NAME).first.wait_for(
+                state="visible", timeout=15000
+            )
         except PlaywrightTimeoutError:
             return True
         return False

@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Dmitry Andersson
+# SPDX-License-Identifier: MIT
 """LinkedIn URLs shared by the domain and the browser adapters."""
 
 BASE_URL = "https://www.linkedin.com"

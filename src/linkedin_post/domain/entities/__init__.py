@@ -1,5 +1,14 @@
-from linkedin_post.domain.entities.post_ref import InvalidPostRef, PostRef
-from linkedin_post.domain.entities.post_text import InvalidPostText, PostText
+# Copyright (c) 2026 Dmitry Andersson
+# SPDX-License-Identifier: MIT
+"""Value objects and results of the posting domain."""
+
+from linkedin_post.domain.entities.post_ref import InvalidPostRefError, PostRef
+from linkedin_post.domain.entities.post_text import (
+    BlankPostError,
+    ControlCharacterError,
+    InvalidPostTextError,
+    PostText,
+)
 from linkedin_post.domain.entities.results import (
     DeleteResult,
     DeleteStatus,
@@ -8,10 +17,12 @@ from linkedin_post.domain.entities.results import (
 )
 
 __all__ = [
+    "BlankPostError",
+    "ControlCharacterError",
     "DeleteResult",
     "DeleteStatus",
-    "InvalidPostRef",
-    "InvalidPostText",
+    "InvalidPostRefError",
+    "InvalidPostTextError",
     "PostRef",
     "PostText",
     "PublishResult",

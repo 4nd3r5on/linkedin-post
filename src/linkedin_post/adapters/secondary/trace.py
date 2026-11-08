@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Dmitry Andersson
+# SPDX-License-Identifier: MIT
 """Failure diagnostics through upstream's page trace (screenshot, URL, title, body)."""
 
 import logging
@@ -5,6 +7,7 @@ import re
 from typing import Any
 
 from linkedin_mcp_server.debug_trace import mark_trace_for_retention, record_page_trace
+from patchright.async_api import Error as PlaywrightError
 from patchright.async_api import Locator, Page
 
 logger = logging.getLogger(__name__)
@@ -18,7 +21,7 @@ async def _outer_html(locator: Locator) -> list[str]:
     for element in (await locator.all())[:_PER_KIND_LIMIT]:
         try:
             html.append((await element.evaluate("el => el.outerHTML", timeout=1000))[:_HTML_LIMIT])
-        except Exception as e:
+        except PlaywrightError as e:
             html.append(f"<error: {e}>")
     return html
 
@@ -38,7 +41,7 @@ async def _controls(page: Page, button_name: re.Pattern[str] | None) -> list[dic
             )
             if button_name is not None:
                 entry["buttons"] = await _outer_html(frame.get_by_role("button", name=button_name))
-        except Exception as e:
+        except PlaywrightError as e:
             entry["error"] = str(e)
         frames.append(entry)
     return frames

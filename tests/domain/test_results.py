@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Dmitry Andersson
+# SPDX-License-Identifier: MIT
 import pytest
 
 from linkedin_post.domain.entities import DeleteResult, DeleteStatus, PublishResult, PublishStatus
@@ -27,7 +29,9 @@ def test_delete_is_always_retry_safe(status: DeleteStatus) -> None:
 
 
 def test_publish_dict_drops_unset_fields() -> None:
-    result = PublishResult(PublishStatus.POSTED, "Post published.", visibility="Anyone", post_url="u")
+    result = PublishResult(
+        PublishStatus.POSTED, "Post published.", visibility="Anyone", post_url="u"
+    )
     assert result.to_dict() == {
         "status": "posted",
         "message": "Post published.",

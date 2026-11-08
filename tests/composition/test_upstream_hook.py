@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Dmitry Andersson
+# SPDX-License-Identifier: MIT
 import pytest
 from fastmcp import Client, FastMCP
 

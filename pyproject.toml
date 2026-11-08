@@ -13,7 +13,7 @@ dependencies = ["mcp-server-linkedin==4.29.0"]
 linkedin-post-mcp = "linkedin_post.composition.upstream:main"
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "ruff==0.17.4"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -25,3 +25,34 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/linkedin_post"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# Every rule. Ruff adds rules to ALL on upgrade, hence the pinned version above.
+select = ["ALL"]
+ignore = [
+    # Conflict with `ruff format` (https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules).
+    "COM812",
+    # Mutually exclusive docstring styles: keep D211 (no blank line before class
+    # docstring) and D212 (summary on the first line).
+    "D203",
+    "D213",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S101",    # assert is how pytest checks
+    "PLR2004", # literal values are the expected results
+    "D",       # test names say what they test
+    "FBT001",  # pytest passes parametrized booleans positionally
+]
+
+[tool.ruff.lint.pydocstyle]
+ignore-decorators = ["typing.override"]
+
+[tool.ruff.format]
+docstring-code-format = true

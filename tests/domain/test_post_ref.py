@@ -1,6 +1,8 @@
+# Copyright (c) 2026 Dmitry Andersson
+# SPDX-License-Identifier: MIT
 import pytest
 
-from linkedin_post.domain.entities import InvalidPostRef, PostRef
+from linkedin_post.domain.entities import InvalidPostRefError, PostRef
 
 ID = "7525284009694609408"
 FEED = f"https://www.linkedin.com/feed/update/urn:li:activity:{ID}/"
@@ -38,5 +40,5 @@ def test_resolves_to_feed_update_page(raw: str, url: str) -> None:
     ],
 )
 def test_rejects_non_posts(raw: str) -> None:
-    with pytest.raises(InvalidPostRef):
+    with pytest.raises(InvalidPostRefError):
         PostRef.parse(raw)

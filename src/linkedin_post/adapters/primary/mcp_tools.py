@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Dmitry Andersson
+# SPDX-License-Identifier: MIT
 """create_post and delete_post as MCP tools, shaped like upstream's send_message."""
 
 import logging
@@ -15,6 +17,8 @@ logger = logging.getLogger(__name__)
 def register_posting_tools(
     mcp: FastMCP, posting: Posting, *, tool_timeout: float = DEFAULT_TOOL_TIMEOUT_SECONDS
 ) -> None:
+    """Register create_post and delete_post on ``mcp``, backed by ``posting``."""
+
     @mcp.tool(
         timeout=tool_timeout,
         title="Create Post",
@@ -22,9 +26,8 @@ def register_posting_tools(
         tags={"post"},
     )
     @tool_errors
-    async def create_post(text: str, confirm_post: bool, ctx: Context) -> dict[str, Any]:
-        """
-        Publish a text post to the signed-in user's LinkedIn feed.
+    async def create_post(text: str, *, confirm_post: bool, ctx: Context) -> dict[str, Any]:
+        """Publish a text post to the signed-in user's LinkedIn feed.
 
         Opens LinkedIn's share dialog, inserts the text and clicks Post. The
         post uses the dialog's current visibility ("Post to Anyone" by
@@ -45,6 +48,7 @@ def register_posting_tools(
             failures, when tracing is on) and retry_safe.
             retry_safe is False once Post was clicked: calling again while it
             is False can publish the post twice. Check the feed instead.
+
         """
         await ctx.report_progress(progress=0, total=100, message="Opening share dialog")
         result = await posting.create_post(text, confirm=confirm_post)
@@ -59,9 +63,8 @@ def register_posting_tools(
         tags={"post"},
     )
     @tool_errors
-    async def delete_post(post: str, confirm_delete: bool, ctx: Context) -> dict[str, Any]:
-        """
-        Delete one of the signed-in user's LinkedIn posts. Cannot be undone.
+    async def delete_post(post: str, *, confirm_delete: bool, ctx: Context) -> dict[str, Any]:
+        """Delete one of the signed-in user's LinkedIn posts. Cannot be undone.
 
         Opens the post, uses its "..." menu and LinkedIn's own confirmation.
         Only works on the user's own posts; anyone else's has no Delete item
@@ -79,6 +82,7 @@ def register_posting_tools(
             Dict with status ("deleted", "dry_run", "invalid_post",
             "post_not_found", "not_deletable", "confirm_not_found",
             "outcome_unknown"), deleted, url and message.
+
         """
         await ctx.report_progress(progress=0, total=100, message="Opening post")
         result = await posting.delete_post(post, confirm=confirm_delete)

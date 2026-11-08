@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Dmitry Andersson
+# SPDX-License-Identifier: MIT
 """In-memory stand-ins for the secondary ports."""
 
 from dataclasses import dataclass, field

@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Dmitry Andersson
+# SPDX-License-Identifier: MIT
 """Entry point: upstream's server plus create_post and delete_post."""
 
 from linkedin_post.composition.upstream import main

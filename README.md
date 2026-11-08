@@ -42,7 +42,8 @@ src/linkedin_post/
     secondary/       upstream session gate, share-dialog composer, post remover, failure trace
   composition/       wiring, and the hook that adds our tools next to upstream's post tools
   common/            LinkedIn URLs
-tests/               domain, service (with fake ports), MCP tools, upstream hook
+tests/               domain, service (with fake ports), MCP tools, remover in Chromium,
+                     upstream hook
 ```
 
 What comes from upstream instead of our own code:
@@ -63,8 +64,14 @@ This relies on internal upstream names, so the version is pinned. Re-check
 
 ```sh
 uv sync
-uv run pytest
+uv run ruff check .          # every ruff rule (select = ["ALL"]), see pyproject.toml
+uv run ruff format --check .
+uv run pytest                # the remover test runs in a headless Chromium
 ```
+
+CI (`.github/workflows/ci.yml`) runs the same on Python 3.12, 3.13 and 3.14. Ruff is
+pinned because `ALL` picks up new rules on every upgrade; bump it on purpose and fix
+what it finds.
 
 ## Setup
 
