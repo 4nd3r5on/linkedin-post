@@ -69,6 +69,8 @@ uv run ruff format --check .
 uv run pytest                # the remover test runs in a headless Chromium
 ```
 
+With Nix, `nix develop` gives Python 3.12, uv and ruff, and runs `uv sync` for you.
+
 CI (`.github/workflows/ci.yml`) runs the same on Python 3.12, 3.13 and 3.14. Ruff is
 pinned because `ALL` picks up new rules on every upgrade; bump it on purpose and fix
 what it finds.
