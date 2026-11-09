@@ -20,6 +20,8 @@ class PublishStatus(StrEnum):
     INVALID_TEXT = "invalid_text"
     EDITOR_NOT_FOUND = "editor_not_found"
     INSERT_FAILED = "insert_failed"
+    INVALID_MEDIA = "invalid_media"
+    MEDIA_REJECTED = "media_rejected"
 
 
 class DeleteStatus(StrEnum):
@@ -51,6 +53,7 @@ class PublishResult:
     visibility: str | None = None
     post_url: str | None = None
     characters: int | None = None
+    images: int | None = None
     url: str | None = None
     trace_dir: str | None = None
 

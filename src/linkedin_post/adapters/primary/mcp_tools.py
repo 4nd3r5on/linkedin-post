@@ -26,10 +26,17 @@ def register_posting_tools(
         tags={"post"},
     )
     @tool_errors
-    async def create_post(text: str, *, confirm_post: bool, ctx: Context) -> dict[str, Any]:
-        """Publish a text post to the signed-in user's LinkedIn feed.
+    async def create_post(
+        text: str,
+        *,
+        confirm_post: bool,
+        ctx: Context,
+        images: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Publish a post, optionally with images, to the signed-in user's LinkedIn feed.
 
-        Opens LinkedIn's share dialog, inserts the text and clicks Post. The
+        Opens LinkedIn's share dialog, inserts the text, attaches the images
+        and clicks Post. The
         post uses the dialog's current visibility ("Post to Anyone" by
         default), which is returned as ``visibility``. With confirm_post False
         this is a dry run: the text is inserted, then the draft is discarded
@@ -37,13 +44,17 @@ def register_posting_tools(
 
         Args:
             text: Post text. LF/CRLF/CR end a line; empty lines are kept.
-                Control characters other than line breaks are refused.
+                Control characters other than line breaks are refused. May be
+                empty when images are given.
             confirm_post: Must be True to publish. False is a dry run.
             ctx: FastMCP context for progress reporting
+            images: Absolute paths, on the machine running this server, of up
+                to 20 JPEG/PNG/GIF images of at most 5 MB each.
 
         Returns:
             Dict with status ("dry_run", "posted", "outcome_unknown",
-            "invalid_text", "editor_not_found", "insert_failed"), posted,
+            "invalid_text", "invalid_media", "media_rejected",
+            "editor_not_found", "insert_failed"), posted,
             visibility, post_url (when LinkedIn shows one), trace_dir (on
             failures, when tracing is on) and retry_safe.
             retry_safe is False once Post was clicked: calling again while it
@@ -51,7 +62,7 @@ def register_posting_tools(
 
         """
         await ctx.report_progress(progress=0, total=100, message="Opening share dialog")
-        result = await posting.create_post(text, confirm=confirm_post)
+        result = await posting.create_post(text, images=images, confirm=confirm_post)
         await ctx.report_progress(progress=100, total=100, message="Complete")
         logger.info("create_post: status=%s", result.status)
         return result.to_dict()

@@ -7,8 +7,10 @@ from typing import override
 from linkedin_post.domain.entities import (
     DeleteResult,
     DeleteStatus,
+    InvalidMediaError,
     InvalidPostRefError,
     InvalidPostTextError,
+    PostMedia,
     PostRef,
     PostText,
     PublishResult,
@@ -32,13 +34,19 @@ class PostingService(Posting):
         self._remover = remover
 
     @override
-    async def create_post(self, text: str, *, confirm: bool) -> PublishResult:
+    async def create_post(
+        self, text: str, *, images: list[str] | None = None, confirm: bool
+    ) -> PublishResult:
         try:
-            post_text = PostText.parse(text)
+            media = PostMedia.parse(images)
+        except InvalidMediaError as refusal:
+            return PublishResult(PublishStatus.INVALID_MEDIA, str(refusal))
+        try:
+            post_text = PostText.parse(text, allow_blank=bool(media))
         except InvalidPostTextError as refusal:
             return PublishResult(PublishStatus.INVALID_TEXT, str(refusal))
         page = await self._session.open("create_post")
-        return await self._composer.publish(page, post_text, confirm=confirm)
+        return await self._composer.publish(page, post_text, media, confirm=confirm)
 
     @override
     async def delete_post(self, post: str, *, confirm: bool) -> DeleteResult:

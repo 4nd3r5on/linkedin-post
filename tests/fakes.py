@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from linkedin_post.domain.entities import (
     DeleteResult,
     DeleteStatus,
+    PostMedia,
     PostRef,
     PostText,
     PublishResult,
@@ -28,9 +29,13 @@ class FakeSession:
 @dataclass
 class FakeComposer:
     calls: list[tuple[object, PostText, bool]] = field(default_factory=list)
+    media: list[PostMedia] = field(default_factory=list)
 
-    async def publish(self, page: object, text: PostText, *, confirm: bool) -> PublishResult:
+    async def publish(
+        self, page: object, text: PostText, media: PostMedia, *, confirm: bool
+    ) -> PublishResult:
         self.calls.append((page, text, confirm))
+        self.media.append(media)
         status = PublishStatus.POSTED if confirm else PublishStatus.DRY_RUN
         return PublishResult(status, "fake", characters=len(text))
 

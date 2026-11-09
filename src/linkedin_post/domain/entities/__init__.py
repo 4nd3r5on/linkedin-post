@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 """Value objects and results of the posting domain."""
 
+from linkedin_post.domain.entities.post_media import InvalidMediaError, PostMedia
 from linkedin_post.domain.entities.post_ref import InvalidPostRefError, PostRef
 from linkedin_post.domain.entities.post_text import (
     BlankPostError,
@@ -21,8 +22,10 @@ __all__ = [
     "ControlCharacterError",
     "DeleteResult",
     "DeleteStatus",
+    "InvalidMediaError",
     "InvalidPostRefError",
     "InvalidPostTextError",
+    "PostMedia",
     "PostRef",
     "PostText",
     "PublishResult",

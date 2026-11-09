@@ -26,6 +26,14 @@ async def test_tools_are_registered_with_arguments(mcp: FastMCP) -> None:
     assert tools["delete_post"].annotations.destructive_hint is True
 
 
+async def test_create_post_takes_optional_images(mcp: FastMCP) -> None:
+    async with Client(mcp) as client:
+        result = await client.call_tool(
+            "create_post", {"text": "hi", "images": ["/no/such.png"], "confirm_post": True}
+        )
+    assert result.structured_content["status"] == "invalid_media"
+
+
 async def test_create_post_returns_result_dict(mcp: FastMCP) -> None:
     async with Client(mcp) as client:
         result = await client.call_tool("create_post", {"text": "hi", "confirm_post": False})
