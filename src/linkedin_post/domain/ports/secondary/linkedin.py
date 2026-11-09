@@ -8,7 +8,13 @@ the composer and remover act on it.
 
 from typing import Protocol
 
-from linkedin_post.domain.entities import DeleteResult, PostRef, PostText, PublishResult
+from linkedin_post.domain.entities import (
+    DeleteResult,
+    PostMedia,
+    PostRef,
+    PostText,
+    PublishResult,
+)
 
 type PageHandle = object
 
@@ -24,8 +30,10 @@ class SessionGate(Protocol):
 class PostComposer(Protocol):
     """LinkedIn's share dialog."""
 
-    async def publish(self, page: PageHandle, text: PostText, *, confirm: bool) -> PublishResult:
-        """Insert ``text`` and click Post, or discard the draft when not ``confirm``."""
+    async def publish(
+        self, page: PageHandle, text: PostText, media: PostMedia, *, confirm: bool
+    ) -> PublishResult:
+        """Insert ``text``, attach ``media`` and click Post, or discard when not ``confirm``."""
         ...
 
 

@@ -3,6 +3,7 @@
 """PostingService with fake ports: validation order and what reaches the browser."""
 
 from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
 
@@ -51,6 +52,25 @@ async def test_create_passes_normalized_text_and_confirm(
     assert text.value == "hi\nthere"
     assert passed_confirm is confirm
     assert result.status is (PublishStatus.POSTED if confirm else PublishStatus.DRY_RUN)
+
+
+async def test_invalid_media_never_opens_the_browser(service: PostingService, ports: Ports) -> None:
+    result = await service.create_post("hi", images=["/no/such.png"], confirm=True)
+    assert result.status is PublishStatus.INVALID_MEDIA
+    assert result.retry_safe
+    assert ports.session.opened == []
+
+
+async def test_blank_text_needs_images(
+    service: PostingService, ports: Ports, tmp_path: Path
+) -> None:
+    assert (await service.create_post(" ", confirm=True)).status is PublishStatus.INVALID_TEXT
+    image = tmp_path / "a.png"
+    image.write_bytes(b"\x89PNG\r\n\x1a\n")
+    result = await service.create_post(" ", images=[str(image)], confirm=True)
+    assert result.status is PublishStatus.POSTED
+    [media] = ports.composer.media
+    assert media.paths == (image,)
 
 
 async def test_invalid_post_ref_never_opens_the_browser(

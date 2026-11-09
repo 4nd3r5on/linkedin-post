@@ -40,11 +40,12 @@ class PostText:
     value: str
 
     @classmethod
-    def parse(cls, raw: str) -> Self:
+    def parse(cls, raw: str, *, allow_blank: bool = False) -> Self:
         """Refuse control characters and blank text; normalize line breaks.
 
         LF, CRLF and CR all end a line, whitespace-only lines become empty and
         the whole text is trimmed, matching what LinkedIn itself publishes.
+        ``allow_blank`` is for posts with images, where text is optional.
 
         Raises:
             ControlCharacterError: The text has a refused control character.
@@ -54,7 +55,7 @@ class PostText:
         if any(_refused_character(c) for c in raw):
             raise ControlCharacterError
         normalized = normalize_message_text(raw)
-        if not normalized:
+        if not normalized and not allow_blank:
             raise BlankPostError
         return cls(normalized)
 
